@@ -143,7 +143,7 @@ var sUrl = 'https://t.kmtx.io/s?' +
 
 sendPixel(sUrl, data.gtmOnSuccess(), data.gtmOnFailure());
 
-if (data.sid) {
+if (data.sid && !isTimer) {
     var tsUrl = 'https://t.kmtx.io/ts?' +
         'aid=' + encodeUriComponent(data.aid) +
         '&sid=' + encodeUriComponent(data.sid);
@@ -151,7 +151,7 @@ if (data.sid) {
     sendPixel(tsUrl, data.gtmOnSuccess(), data.gtmOnFailure());
 }
 
-if (data.extraUrl) {
+if (data.extraUrl && !isTimer) {
     sendPixel(data.extraUrl, data.gtmOnSuccess(), data.gtmOnFailure());
 }
 
@@ -626,6 +626,53 @@ scenarios:
 
     // track3r s handler call
     assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=lead&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+- name: timer event for visit
+  code: |+
+    var triggerUrls = [];
+
+    var testCid='7a00007a-0000-47a0-8007-a00007a00007';
+
+    mock('getCookieValues', function(name, decode) {
+        return [testCid];
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+      triggerUrls.push(url);
+    });
+
+    mock('copyFromDataLayer', function(key, version) {
+      return 'seedtag.timer';
+    });
+
+    var extraUrl = 'https://ad.doubleclick.net/ddm/activity/src=10089018;type=invmedia;cat=de_pl0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=${GDPR};gdpr_consent=${GDPR_CONSENT_755};ord=1?';
+
+    // Call runCode to run the template's code.
+    runCode({
+      aid: '1',
+      event: 'visit',
+      sid: '42',
+      extraUrl: extraUrl
+    });
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+
+    // Verify that the URL was correctly fired
+    assertApi('setCookie').wasCalled();
+
+    // Verify that the URL was correctly fired
+    assertApi('getCookieValues').wasCalled();
+
+    // Verify that the Cookie was correctly set
+    assertApi('setCookie').wasCalledWith('_km', testCid, cookie_options);
+
+    // Verify that the URL was correctly fired
+    assertApi('sendPixel').wasCalled();
+    assertThat(triggerUrls.length).isEqualTo(1);
+
+    // track3r s handler call
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+
 setup: |-
   mock('generateRandom', 2);
 
