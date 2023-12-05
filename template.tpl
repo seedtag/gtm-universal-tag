@@ -66,24 +66,8 @@ ___TEMPLATE_PARAMETERS___
     ]
   },
   {
-    "type": "TEXT",
-    "name": "extraUrl",
-    "displayName": "Extra url",
-    "simpleValueType": true,
-    "canBeEmptyString": true,
-    "valueHint": "Optional",
-    "valueValidators": [
-      {
-        "type": "REGEX",
-        "args": [
-          "^(|https?:\\/\\/[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-\\.,@?^\u003d%\u0026amp;:/~\\+#\\${}]*[\\w\\-\\@?^\u003d%\u0026amp;/~\\+#\\${}])?)$"
-        ]
-      }
-    ]
-  },
-  {
     "type": "SELECT",
-    "name": "event",
+    "name": "type",
     "displayName": "Type",
     "selectItems": [
       {
@@ -133,7 +117,7 @@ var sUrl = 'https://t.kmtx.io/s?' +
     'aid=' + encodeUriComponent(data.aid) +
     '&cid=' + cid +
     '&eid=' + uuid() +
-    '&a=' + (isTimer ? 'close' : data.event) +
+    '&a=' + (isTimer ? 'close' : data.type) +
     '&v=gtm_1' +
     '&url=' + encodeUri(getUrl()) +
     '&ref=' + encodeUri(getReferrerUrl()) +
@@ -149,10 +133,6 @@ if (data.sid && !isTimer) {
         '&sid=' + encodeUriComponent(data.sid);
 
     sendPixel(tsUrl, data.gtmOnSuccess(), data.gtmOnFailure());
-}
-
-if (data.extraUrl && !isTimer) {
-    sendPixel(data.extraUrl, data.gtmOnSuccess(), data.gtmOnFailure());
 }
 
 // Function to generate random UUIDv4
@@ -282,7 +262,19 @@ ___WEB_PERMISSIONS___
           "key": "allowedUrls",
           "value": {
             "type": 1,
-            "string": "any"
+            "string": "specific"
+          }
+        },
+        {
+          "key": "urls",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 1,
+                "string": "https://t.kmtx.io/*"
+              }
+            ]
           }
         }
       ]
@@ -404,7 +396,7 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
+      type: 'visit',
       sid: '',
       extraUrl: ''
     });
@@ -423,9 +415,8 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
-      sid: '',
-      extraUrl: ''
+      type: 'visit',
+      sid: ''
     });
 
     // Verify onFailure was called
@@ -445,9 +436,8 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
-      sid: '',
-      extraUrl: ''
+      type: 'visit',
+      sid: ''
     });
 
     // Verify that the tag finished successfully.
@@ -455,7 +445,7 @@ scenarios:
 
 
     assertApi('setCookie').wasCalledWith('_km', genUUID, cookie_options);
-- name: visit event no sid and no extraUrl
+- name: visit event no sid
   code: |
     var triggerUrls = [];
 
@@ -472,9 +462,8 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
-      sid: '',
-      extraUrl: ''
+      type: 'visit',
+      sid: ''
     });
 
     // Verify that the tag finished successfully.
@@ -495,7 +484,7 @@ scenarios:
 
     // track3r s handler call
     assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-- name: visit event with sid no extraUrl
+- name: visit event with sid
   code: |
     var triggerUrls = [];
 
@@ -512,9 +501,8 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
-      sid: '42',
-      extraUrl: ''
+      type: 'visit',
+      sid: '42'
     });
 
     // Verify that the tag finished successfully.
@@ -538,55 +526,7 @@ scenarios:
 
     // track3r t handler call
     assertThat(triggerUrls[1]).isEqualTo('https://t.kmtx.io/ts?aid=1&sid=42');
-- name: visit event with sid and with extraUrl
-  code: |
-    var triggerUrls = [];
-
-    var testCid='7a00007a-0000-47a0-8007-a00007a00007';
-
-    mock('getCookieValues', function(name, decode) {
-        return [testCid];
-    });
-
-    mock('sendPixel', function(url, onSuccess, onFailure) {
-      triggerUrls.push(url);
-    });
-
-    var extraUrl = 'https://ad.doubleclick.net/ddm/activity/src=10089018;type=invmedia;cat=de_pl0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=${GDPR};gdpr_consent=${GDPR_CONSENT_755};ord=1?';
-
-    // Call runCode to run the template's code.
-    runCode({
-      aid: '1',
-      event: 'visit',
-      sid: '42',
-      extraUrl: extraUrl
-    });
-
-    // Verify that the tag finished successfully.
-    assertApi('gtmOnSuccess').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('setCookie').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('getCookieValues').wasCalled();
-
-    // Verify that the Cookie was correctly set
-    assertApi('setCookie').wasCalledWith('_km', testCid, cookie_options);
-
-    // Verify that the URL was correctly fired
-    assertApi('sendPixel').wasCalled();
-    assertThat(triggerUrls.length).isEqualTo(3);
-
-    // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-
-    // track3r t handler call
-    assertThat(triggerUrls[1]).isEqualTo('https://t.kmtx.io/ts?aid=1&sid=42');
-
-    // extra url call
-    assertThat(triggerUrls[2]).isEqualTo(extraUrl);
-- name: lead event no sid and no extraUrl
+- name: lead event no sid
   code: |
     var triggerUrls = [];
 
@@ -603,9 +543,8 @@ scenarios:
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'lead',
-      sid: '',
-      extraUrl: ''
+      type: 'lead',
+      sid: ''
     });
 
     // Verify that the tag finished successfully.
@@ -644,14 +583,55 @@ scenarios:
       return 'seedtag.timer';
     });
 
-    var extraUrl = 'https://ad.doubleclick.net/ddm/activity/src=10089018;type=invmedia;cat=de_pl0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;tfua=;npa=;gdpr=${GDPR};gdpr_consent=${GDPR_CONSENT_755};ord=1?';
+    // Call runCode to run the template's code.
+    runCode({
+      aid: '1',
+      type: 'visit',
+      sid: '42'
+    });
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+
+    // Verify that the URL was correctly fired
+    assertApi('setCookie').wasCalled();
+
+    // Verify that the URL was correctly fired
+    assertApi('getCookieValues').wasCalled();
+
+    // Verify that the Cookie was correctly set
+    assertApi('setCookie').wasCalledWith('_km', testCid, cookie_options);
+
+    // Verify that the URL was correctly fired
+    assertApi('sendPixel').wasCalled();
+    assertThat(triggerUrls.length).isEqualTo(1);
+
+    // track3r s handler call
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+
+- name: timer event for lead
+  code: |+
+    var triggerUrls = [];
+
+    var testCid='7a00007a-0000-47a0-8007-a00007a00007';
+
+    mock('getCookieValues', function(name, decode) {
+        return [testCid];
+    });
+
+    mock('sendPixel', function(url, onSuccess, onFailure) {
+      triggerUrls.push(url);
+    });
+
+    mock('copyFromDataLayer', function(key, version) {
+      return 'seedtag.timer';
+    });
 
     // Call runCode to run the template's code.
     runCode({
       aid: '1',
-      event: 'visit',
-      sid: '42',
-      extraUrl: extraUrl
+      type: 'lead',
+      sid: '42'
     });
 
     // Verify that the tag finished successfully.
