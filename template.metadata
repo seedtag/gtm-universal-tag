@@ -1,5 +1,5 @@
 homepage: "https://www.seedtag.com/"
 documentation: "https://github.com/seedtag/gtm-universal-tag/wiki"
 versions:
-  - sha: 711dd47b1b5c1c9e45af414cf3e6162b27d83869
+  - sha: 5a7014ad1e22ba652901d53fc42780a11b511e64
     changeNotes: Initial release.
