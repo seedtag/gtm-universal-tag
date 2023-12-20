@@ -128,14 +128,14 @@ var sUrl = 'https://t.kmtx.io/s?' +
     '&trk=trkid' +
     '&t=img';
 
-sendPixel(sUrl, data.gtmOnSuccess(), data.gtmOnFailure());
+sendPixel(sUrl, data.gtmOnSuccess, data.gtmOnFailure);
 
 if (data.sid && !isTimer) {
     var tsUrl = 'https://t.kmtx.io/ts?' +
         'aid=' + encodeUriComponent(data.aid) +
         '&sid=' + encodeUriComponent(data.sid);
 
-    sendPixel(tsUrl, data.gtmOnSuccess(), data.gtmOnFailure());
+    sendPixel(tsUrl, data.gtmOnSuccess, data.gtmOnFailure);
 }
 
 // Function to generate random UUIDv4
