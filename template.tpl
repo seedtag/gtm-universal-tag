@@ -37,31 +37,17 @@ ___TEMPLATE_PARAMETERS___
 [
   {
     "type": "TEXT",
-    "name": "aid",
-    "displayName": "Advertiser ID",
+    "name": "pid",
+    "displayName": "Pixel ID",
     "simpleValueType": true,
     "valueValidators": [
       {
         "type": "NON_EMPTY"
       },
       {
-        "type": "POSITIVE_NUMBER"
-      }
-    ],
-    "valueHint": "Must be a positive integer"
-  },
-  {
-    "type": "TEXT",
-    "name": "sid",
-    "displayName": "SID",
-    "simpleValueType": true,
-    "canBeEmptyString": true,
-    "valueHint": "Optional",
-    "valueValidators": [
-      {
         "type": "REGEX",
         "args": [
-          "^$|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+          "^[0-9]+-[0-9a-f]{20}$"
         ]
       }
     ]
@@ -117,26 +103,18 @@ setCookie('_km', cid, { 'max-age': 30 * 24 * 60 * 60, 'secure': true });
 let isTimer = copyFromDataLayer('event') === 'seedtag.timer';
 
 var sUrl = 'https://t.kmtx.io/s?' +
-    'aid=' + encodeUriComponent(data.aid) +
+    'pid=' + encodeUriComponent(data.pid) +
     '&cid=' + cid +
     '&eid=' + uuid() +
     '&a=' + (isTimer ? 'close' : data.type) +
-    '&v=gtm_1' +
+    '&v=gtm_2' +
     '&url=' + encodeUri(getUrl()) +
     '&ref=' + encodeUri(getReferrerUrl()) +
     '&ts=' + getTimestampMillis() +
     '&trk=trkid' +
     '&t=img';
 
-sendPixel(sUrl, data.gtmOnSuccess, data.gtmOnFailure);
-
-if (data.sid && !isTimer) {
-    var tsUrl = 'https://t.kmtx.io/ts?' +
-        'aid=' + encodeUriComponent(data.aid) +
-        '&sid=' + encodeUriComponent(data.sid);
-
-    sendPixel(tsUrl, data.gtmOnSuccess, data.gtmOnFailure);
-}
+sendPixel(sUrl, data.gtmOnSuccess(), data.gtmOnFailure());
 
 // Function to generate random UUIDv4
 function uuid() {
@@ -448,7 +426,7 @@ scenarios:
 
 
     assertApi('setCookie').wasCalledWith('_km', genUUID, cookie_options);
-- name: visit event no sid
+- name: visit event
   code: |
     var triggerUrls = [];
 
@@ -464,7 +442,7 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
+      pid: '1-ade456ef78ade456ef78',
       type: 'visit',
       sid: ''
     });
@@ -486,8 +464,8 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-- name: visit event with sid
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+- name: lead event
   code: |
     var triggerUrls = [];
 
@@ -503,51 +481,8 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
-      type: 'visit',
-      sid: '42'
-    });
-
-    // Verify that the tag finished successfully.
-    assertApi('gtmOnSuccess').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('setCookie').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('getCookieValues').wasCalled();
-
-    // Verify that the Cookie was correctly set
-    assertApi('setCookie').wasCalledWith('_km', testCid, cookie_options);
-
-    // Verify that the URL was correctly fired
-    assertApi('sendPixel').wasCalled();
-    assertThat(triggerUrls.length).isEqualTo(2);
-
-    // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-
-    // track3r t handler call
-    assertThat(triggerUrls[1]).isEqualTo('https://t.kmtx.io/ts?aid=1&sid=42');
-- name: lead event no sid
-  code: |
-    var triggerUrls = [];
-
-    var testCid='7a00007a-0000-47a0-8007-a00007a00007';
-
-    mock('getCookieValues', function(name, decode) {
-        return [testCid];
-    });
-
-    mock('sendPixel', function(url, onSuccess, onFailure) {
-      triggerUrls.push(url);
-    });
-
-    // Call runCode to run the template's code.
-    runCode({
-      aid: '1',
+      pid: '1-ade456ef78ade456ef78',
       type: 'lead',
-      sid: ''
     });
 
     // Verify that the tag finished successfully.
@@ -567,7 +502,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=lead&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=lead&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 - name: timer event for visit
   code: |+
     var triggerUrls = [];
@@ -588,9 +523,8 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
-      type: 'visit',
-      sid: '42'
+      pid: '1-ade456ef78ade456ef78',
+      type: 'visit'
     });
 
     // Verify that the tag finished successfully.
@@ -610,7 +544,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 
 - name: timer event for lead
   code: |+
@@ -632,9 +566,8 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
-      type: 'lead',
-      sid: '42'
+      pid: '1-ade456ef78ade456ef78',
+      type: 'lead'
     });
 
     // Verify that the tag finished successfully.
@@ -654,7 +587,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?aid=1&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_1&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 
 setup: |-
   mock('generateRandom', 2);
