@@ -110,7 +110,7 @@ var sUrl = 'https://t.kmtx.io/s?' +
     '&eid=' + uuid() +
     '&a=' + (isTimer ? 'close' : data.type) +
     '&ed=' + (eventData === undefined ? '' : encodeUriComponent(eventData)) +
-    '&v=gtm_2' +
+    '&v=gtm_3' +
     '&url=' + encodeUri(getUrl()) +
     '&ref=' + encodeUri(getReferrerUrl()) +
     '&ts=' + getTimestampMillis() +
@@ -486,7 +486,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=visit&ed=formStart&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=visit&ed=formStart&v=gtm_3&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 - name: lead event without eventData
   code: |
     var triggerUrls = [];
@@ -527,7 +527,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=lead&ed=&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=lead&ed=&v=gtm_3&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 - name: timer event for visit with eventData
   code: "var triggerUrls = [];\n\nvar testCid='7a00007a-0000-47a0-8007-a00007a00007';\n\
     \nmock('getCookieValues', function(name, decode) {\n    return [testCid];\n});\n\
@@ -542,7 +542,7 @@ scenarios:
     \n// Verify that the Cookie was correctly set\nassertApi('setCookie').wasCalledWith('_km',\
     \ testCid, cookie_options);\n\n// Verify that the URL was correctly fired\nassertApi('sendPixel').wasCalled();\n\
     assertThat(triggerUrls.length).isEqualTo(1);\n\n// track3r s handler call\nassertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid='\
-    \ + testCid + '&eid=' + genUUID + '&a=close&ed=formStart&v=gtm_2&url=' + testUrl\
+    \ + testCid + '&eid=' + genUUID + '&a=close&ed=formStart&v=gtm_3&url=' + testUrl\
     \ + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');\n\n"
 - name: timer event for lead without eventData
   code: |+
@@ -590,7 +590,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&ed=&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&ed=&v=gtm_3&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 
 setup: |-
   mock('generateRandom', 2);
