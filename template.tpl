@@ -89,7 +89,6 @@ const getCookieValues = require('getCookieValues');
 const getTimestampMillis = require('getTimestampMillis');
 const encodeUriComponent = require('encodeUriComponent');
 
-
 // If there is already a first party cookie no need to create new uuid, but we need to update expire date to 30 days.
 var cid = getCookieValues('_km')[0];
 if (cid === undefined) {
@@ -102,11 +101,15 @@ setCookie('_km', cid, { 'max-age': 30 * 24 * 60 * 60, 'secure': true });
 // If event is a seedtag.timer then it's a qualified visit, we can record a close.
 let isTimer = copyFromDataLayer('event') === 'seedtag.timer';
 
+// Optional eventData could be set in data layer
+let eventData = copyFromDataLayer('eventData');
+
 var sUrl = 'https://t.kmtx.io/s?' +
     'pid=' + encodeUriComponent(data.pid) +
     '&cid=' + cid +
     '&eid=' + uuid() +
     '&a=' + (isTimer ? 'close' : data.type) +
+    '&ed=' + (eventData === undefined ? '' : encodeUriComponent(eventData)) +
     '&v=gtm_2' +
     '&url=' + encodeUri(getUrl()) +
     '&ref=' + encodeUri(getReferrerUrl()) +
@@ -197,6 +200,9 @@ ___WEB_PERMISSIONS___
         }
       ]
     },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
     "isRequired": true
   },
   {
@@ -221,6 +227,10 @@ ___WEB_PERMISSIONS___
               {
                 "type": 1,
                 "string": "event"
+              },
+              {
+                "type": 1,
+                "string": "eventData"
               }
             ]
           }
@@ -357,6 +367,9 @@ ___WEB_PERMISSIONS___
         }
       ]
     },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
     "isRequired": true
   }
 ]
@@ -426,7 +439,7 @@ scenarios:
 
 
     assertApi('setCookie').wasCalledWith('_km', genUUID, cookie_options);
-- name: visit event
+- name: visit event with eventData
   code: |
     var triggerUrls = [];
 
@@ -438,6 +451,12 @@ scenarios:
 
     mock('sendPixel', function(url, onSuccess, onFailure) {
       triggerUrls.push(url);
+    });
+
+    mock('copyFromDataLayer', function(key, version) {
+      if (key === 'eventData') {
+        return 'formStart';
+      }
     });
 
     // Call runCode to run the template's code.
@@ -464,8 +483,8 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=visit&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-- name: lead event
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=visit&ed=formStart&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+- name: lead event without eventData
   code: |
     var triggerUrls = [];
 
@@ -502,8 +521,24 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=lead&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-- name: timer event for visit
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=lead&ed=&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+- name: timer event for visit with eventData
+  code: "var triggerUrls = [];\n\nvar testCid='7a00007a-0000-47a0-8007-a00007a00007';\n\
+    \nmock('getCookieValues', function(name, decode) {\n    return [testCid];\n});\n\
+    \nmock('sendPixel', function(url, onSuccess, onFailure) {\n  triggerUrls.push(url);\n\
+    });\n\nmock('copyFromDataLayer', function(key, version) {\n  if (key === 'event')\
+    \ {\n    return 'seedtag.timer';\n  }\n  \n  if (key === 'eventData') {\n    return\
+    \ 'formStart';\n  }\n});\n\n// Call runCode to run the template's code.\nrunCode({\n\
+    \  pid: '1-ade456ef78ade456ef78',\n  type: 'visit'\n});\n\n// Verify that the\
+    \ tag finished successfully.\nassertApi('gtmOnSuccess').wasCalled();\n\n// Verify\
+    \ that the URL was correctly fired\nassertApi('setCookie').wasCalled();\n\n//\
+    \ Verify that the URL was correctly fired\nassertApi('getCookieValues').wasCalled();\n\
+    \n// Verify that the Cookie was correctly set\nassertApi('setCookie').wasCalledWith('_km',\
+    \ testCid, cookie_options);\n\n// Verify that the URL was correctly fired\nassertApi('sendPixel').wasCalled();\n\
+    assertThat(triggerUrls.length).isEqualTo(1);\n\n// track3r s handler call\nassertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid='\
+    \ + testCid + '&eid=' + genUUID + '&a=close&ed=formStart&v=gtm_2&url=' + testUrl\
+    \ + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');\n\n"
+- name: timer event for lead without eventData
   code: |+
     var triggerUrls = [];
 
@@ -518,50 +553,9 @@ scenarios:
     });
 
     mock('copyFromDataLayer', function(key, version) {
-      return 'seedtag.timer';
-    });
-
-    // Call runCode to run the template's code.
-    runCode({
-      pid: '1-ade456ef78ade456ef78',
-      type: 'visit'
-    });
-
-    // Verify that the tag finished successfully.
-    assertApi('gtmOnSuccess').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('setCookie').wasCalled();
-
-    // Verify that the URL was correctly fired
-    assertApi('getCookieValues').wasCalled();
-
-    // Verify that the Cookie was correctly set
-    assertApi('setCookie').wasCalledWith('_km', testCid, cookie_options);
-
-    // Verify that the URL was correctly fired
-    assertApi('sendPixel').wasCalled();
-    assertThat(triggerUrls.length).isEqualTo(1);
-
-    // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
-
-- name: timer event for lead
-  code: |+
-    var triggerUrls = [];
-
-    var testCid='7a00007a-0000-47a0-8007-a00007a00007';
-
-    mock('getCookieValues', function(name, decode) {
-        return [testCid];
-    });
-
-    mock('sendPixel', function(url, onSuccess, onFailure) {
-      triggerUrls.push(url);
-    });
-
-    mock('copyFromDataLayer', function(key, version) {
-      return 'seedtag.timer';
+      if (key === 'event') {
+          return 'seedtag.timer';
+      }
     });
 
     // Call runCode to run the template's code.
@@ -587,7 +581,7 @@ scenarios:
     assertThat(triggerUrls.length).isEqualTo(1);
 
     // track3r s handler call
-    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
+    assertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid=' + testCid + '&eid=' + genUUID + '&a=close&ed=&v=gtm_2&url=' + testUrl + '&ref=' + testReferrerUrl + '&ts=1&trk=trkid&t=img');
 
 setup: |-
   mock('generateRandom', 2);
