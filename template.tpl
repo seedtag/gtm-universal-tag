@@ -117,7 +117,7 @@ var sUrl = 'https://t.kmtx.io/s?' +
     '&trk=trkid' +
     '&t=img';
 
-sendPixel(sUrl, data.gtmOnSuccess(), data.gtmOnFailure());
+sendPixel(sUrl, data.gtmOnSuccess, data.gtmOnFailure);
 
 // Function to generate random UUIDv4
 function uuid() {
@@ -389,10 +389,8 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
-      type: 'visit',
-      sid: '',
-      extraUrl: ''
+      pid: '1-ade456ef78ade456ef78',
+      type: 'visit'
     });
 
     // Verify that the tag finished successfully.
@@ -408,9 +406,8 @@ scenarios:
 
     // Call runCode to run the template's code.
     runCode({
-      aid: '1',
-      type: 'visit',
-      sid: ''
+      aid: '1-ade456ef78ade456ef78',
+      type: 'visit'
     });
 
     // Verify onFailure was called
@@ -421,6 +418,9 @@ scenarios:
 
     mock('sendPixel', function(url, onSuccess, onFailure) {
       triggerUrls.push(url);
+      if (onSuccess != null) {
+        onSuccess();
+      }
     });
 
     mock('getCookieValues', function(name, decode) {
@@ -451,6 +451,9 @@ scenarios:
 
     mock('sendPixel', function(url, onSuccess, onFailure) {
       triggerUrls.push(url);
+      if (onSuccess != null) {
+        onSuccess();
+      }
     });
 
     mock('copyFromDataLayer', function(key, version) {
@@ -496,6 +499,9 @@ scenarios:
 
     mock('sendPixel', function(url, onSuccess, onFailure) {
       triggerUrls.push(url);
+      if (onSuccess != null) {
+        onSuccess();
+      }
     });
 
     // Call runCode to run the template's code.
@@ -526,13 +532,13 @@ scenarios:
   code: "var triggerUrls = [];\n\nvar testCid='7a00007a-0000-47a0-8007-a00007a00007';\n\
     \nmock('getCookieValues', function(name, decode) {\n    return [testCid];\n});\n\
     \nmock('sendPixel', function(url, onSuccess, onFailure) {\n  triggerUrls.push(url);\n\
-    });\n\nmock('copyFromDataLayer', function(key, version) {\n  if (key === 'event')\
-    \ {\n    return 'seedtag.timer';\n  }\n  \n  if (key === 'eventData') {\n    return\
-    \ 'formStart';\n  }\n});\n\n// Call runCode to run the template's code.\nrunCode({\n\
-    \  pid: '1-ade456ef78ade456ef78',\n  type: 'visit'\n});\n\n// Verify that the\
-    \ tag finished successfully.\nassertApi('gtmOnSuccess').wasCalled();\n\n// Verify\
-    \ that the URL was correctly fired\nassertApi('setCookie').wasCalled();\n\n//\
-    \ Verify that the URL was correctly fired\nassertApi('getCookieValues').wasCalled();\n\
+    \  if (onSuccess != null) {\n    onSuccess();\n  }\n});\n\nmock('copyFromDataLayer',\
+    \ function(key, version) {\n  if (key === 'event') {\n    return 'seedtag.timer';\n\
+    \  }\n  \n  if (key === 'eventData') {\n    return 'formStart';\n  }\n});\n\n\
+    // Call runCode to run the template's code.\nrunCode({\n  pid: '1-ade456ef78ade456ef78',\n\
+    \  type: 'visit'\n});\n\n// Verify that the tag finished successfully.\nassertApi('gtmOnSuccess').wasCalled();\n\
+    \n// Verify that the URL was correctly fired\nassertApi('setCookie').wasCalled();\n\
+    \n// Verify that the URL was correctly fired\nassertApi('getCookieValues').wasCalled();\n\
     \n// Verify that the Cookie was correctly set\nassertApi('setCookie').wasCalledWith('_km',\
     \ testCid, cookie_options);\n\n// Verify that the URL was correctly fired\nassertApi('sendPixel').wasCalled();\n\
     assertThat(triggerUrls.length).isEqualTo(1);\n\n// track3r s handler call\nassertThat(triggerUrls[0]).isEqualTo('https://t.kmtx.io/s?pid=1-ade456ef78ade456ef78&cid='\
@@ -550,6 +556,9 @@ scenarios:
 
     mock('sendPixel', function(url, onSuccess, onFailure) {
       triggerUrls.push(url);
+      if (onSuccess != null) {
+        onSuccess();
+      }
     });
 
     mock('copyFromDataLayer', function(key, version) {
