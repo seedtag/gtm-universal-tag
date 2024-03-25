@@ -1,5 +1,7 @@
 homepage: "https://www.seedtag.com/"
 documentation: "https://github.com/seedtag/gtm-universal-tag/wiki"
 versions:
+  - sha: 2f94897e816a3dd76f7d1198bb6f8999520a752e
+    changeNotes: Pixel identifier feature.
   - sha: 2173853efe8d1e3315c1e808119fb16a5b2136a9
     changeNotes: Initial release.
