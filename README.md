@@ -1,5 +1,7 @@
 # Seedtag Universal Tag for Google Tag Manager
 
+Product has been discontinued.
+All necessary files to be listed in [Community Template Gallery](https://tagmanager.google.com/gallery/#/) have been deleted.
 
 ## Overview
 
